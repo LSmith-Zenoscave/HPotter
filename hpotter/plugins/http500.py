@@ -43,15 +43,14 @@ class HTTPHandler(socketserver.BaseRequestHandler):
             return
 
         http = tables.HTTPCommands(request=data, connection=connection)
-        self.session.add(http)
+        write_db(http)
 
         self.request.sendall(Header.encode('utf-8'))
 
 class HTTPServer(socketserver.ThreadingMixIn, socketserver.TCPServer): pass
 
-def start_server(session):
+def start_server():
     http_handler = HTTPHandler
-    http_handler.session = session
     http500_server = HTTPServer(('0.0.0.0', 80), HTTPHandler)
     threading.Thread(target=http500_server.serve_forever).start()
 
