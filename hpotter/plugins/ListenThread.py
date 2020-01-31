@@ -4,69 +4,74 @@ import ssl
 import tempfile
 import os
 
-from OpenSSL import crypto, SSL
+from OpenSSL import crypto
 from time import gmtime, mktime
 
+from hpotter.logger import logger
 from hpotter import tables
-from hpotter.env import logger, write_db
+from hpotter.db import write_db
 from hpotter.plugins.ContainerThread import ContainerThread
 
 class ListenThread(threading.Thread):
-    def __init__(self, data, table=None, limit=None):
+    def __init__(self, config, table=None, limit=None):
         super().__init__()
-        self.listen_address = (data['listen_IP'], int(data['listen_port']))
-        self.container_name = data['container']
+        self.config = config
         self.table = table
         self.limit = limit
         self.shutdown_requested = False
-        self.TLS = 'TLS' in data and data['TLS']
+        self.TLS = 'TLS' in self.config and self.config['TLS']
         self.context = None
         self.container_list = []
 
     # https://stackoverflow.com/questions/27164354/create-a-self-signed-x509-certificate-in-python
     def gen_cert(self):
-        key = crypto.PKey()
-        key.generate_key(crypto.TYPE_RSA, 4096)
-        cert = crypto.X509()
-        cert.get_subject().C = "UK"
-        cert.get_subject().ST = "London"
-        cert.get_subject().L = "Diagon Alley"
-        cert.get_subject().OU = "The Leaky Caldron"
-        cert.get_subject().O = "J.K. Incorporated"
-        cert.get_subject().CN = socket.gethostname()
-        cert.set_serial_number(1000)
-        cert.gmtime_adj_notBefore(0)
-        cert.gmtime_adj_notAfter(10*365*24*60*60)
-        cert.set_issuer(cert.get_subject())
-        cert.set_pubkey(key)
-        cert.sign(key, 'sha1')
+        if 'key_file' in self.config:
+            self.context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+            self.context.load_cert_chain(self.config['cert_file'], self.config['key_file'])
+        else:
+            key = crypto.PKey()
+            key.generate_key(crypto.TYPE_RSA, 4096)
+            cert = crypto.X509()
+            cert.get_subject().C = "UK"
+            cert.get_subject().ST = "London"
+            cert.get_subject().L = "Diagon Alley"
+            cert.get_subject().OU = "The Leaky Caldron"
+            cert.get_subject().O = "J.K. Incorporated"
+            cert.get_subject().CN = socket.gethostname()
+            cert.set_serial_number(1000)
+            cert.gmtime_adj_notBefore(0)
+            cert.gmtime_adj_notAfter(10*365*24*60*60)
+            cert.set_issuer(cert.get_subject())
+            cert.set_pubkey(key)
+            cert.sign(key, 'sha1')
 
-        # can't use an iobyte file for this as load_cert_chain only take a
-        # filesystem path :/
-        cert_file = tempfile.NamedTemporaryFile(delete=False)
-        cert_file.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
-        cert_file.close()
+            # can't use an iobyte file for this as load_cert_chain only take a
+            # filesystem path :/
+            cert_file = tempfile.NamedTemporaryFile(delete=False)
+            cert_file.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
+            cert_file.close()
 
-        key_file = tempfile.NamedTemporaryFile(delete=False)
-        key_file.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key))
-        key_file.close()
+            key_file = tempfile.NamedTemporaryFile(delete=False)
+            key_file.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key))
+            key_file.close()
 
-        self.context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-        self.context.load_cert_chain(certfile=cert_file.name, keyfile=key_file.name)
+            self.context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+            self.context.load_cert_chain(certfile=cert_file.name, keyfile=key_file.name)
 
-        os.remove(cert_file.name)
-        os.remove(key_file.name)
+            os.remove(cert_file.name)
+            os.remove(key_file.name)
 
     def run(self):
         if self.TLS:
             self.gen_cert()
 
-        logger.info('Listening to ' + str(self.listen_address))
+        listen_address = (self.config['listen_IP'], int(self.config['listen_port']))
+        logger.info('Listening to ' + str(listen_address))
         listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         # check for shutdown request every five seconds
         listen_socket.settimeout(5)
-        listen_socket.bind(self.listen_address)
+        listen_socket.bind(listen_address)
         listen_socket.listen()
 
         while True:
@@ -85,7 +90,7 @@ class ListenThread(threading.Thread):
             except Exception as exc:
                 logger.info(exc)
 
-            container = ContainerThread(source, self.container_name)
+            container = ContainerThread(source, self.config['container'])
             self.container_list.append(container)
             container.start()
 

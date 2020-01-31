@@ -3,7 +3,7 @@ import threading
 import docker
 import time
 
-from hpotter.env import logger
+from hpotter.logger import logger
 from hpotter.plugins.OneWayThread import OneWayThread
 
 class ContainerThread(threading.Thread):

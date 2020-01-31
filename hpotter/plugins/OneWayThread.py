@@ -2,7 +2,8 @@ import socket
 import threading
 
 from hpotter import tables
-from hpotter.env import logger, write_db
+from hpotter.logger import logger
+from hpotter.db import write_db
 
 # read and write between two sockets with a possible upper limit. write to
 # db if table passed in.

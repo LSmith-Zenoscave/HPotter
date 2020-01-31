@@ -8,7 +8,8 @@ import _thread
 
 import hpotter.env
 from hpotter import tables
-from hpotter.env import logger, write_db, ssh_server
+from hpotter.logger import logger
+from hpotter.env import write_db, ssh_server
 from hpotter.docker_shell.shell import fake_shell
 
 class SSHServer(paramiko.ServerInterface):
