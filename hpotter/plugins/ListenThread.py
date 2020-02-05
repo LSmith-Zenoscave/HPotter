@@ -9,12 +9,12 @@ from time import gmtime, mktime
 
 from hpotter.logger import logger
 from hpotter import tables
-from hpotter.db import write_db
 from hpotter.plugins.ContainerThread import ContainerThread
 
 class ListenThread(threading.Thread):
-    def __init__(self, config, table=None, limit=None):
+    def __init__(self, db, config, table=None, limit=None):
         super().__init__()
+        self.db = db
         self.config = config
         self.table = table
         self.limit = limit
@@ -77,7 +77,6 @@ class ListenThread(threading.Thread):
         while True:
             source = None
             try:
-                # TODO: put the address in the connection table here
                 source, address = listen_socket.accept()
                 if self.TLS:
                     source = self.context.wrap_socket(source, server_side=True)
@@ -90,7 +89,7 @@ class ListenThread(threading.Thread):
             except Exception as exc:
                 logger.info(exc)
 
-            container = ContainerThread(source, self.config['container'])
+            container = ContainerThread(self.db, source, self.config)
             self.container_list.append(container)
             container.start()
 

@@ -1,9 +1,11 @@
 import unittest
 from unittest.mock import MagicMock, call
-from hpotter.plugins.telnet import TelnetHandler
+# from hpotter.plugins.telnet import TelnetHandler
 # from hpotter.plugins.telnet import start_server, stop_server
-from hpotter.env import start_shell, stop_shell
+# from hpotter.env import start_shell, stop_shell
 
+'''
+Leaving for the time being to show socket mocking
 class TestTelnet(unittest.TestCase):
     def setUp(self):
         start_shell()
@@ -44,3 +46,4 @@ class TestTelnet(unittest.TestCase):
             call(b'Username: '),
             call(b'Username: '),
             call(b'Username: ')])
+'''

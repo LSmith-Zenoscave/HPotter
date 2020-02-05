@@ -2,15 +2,25 @@ import socket
 import threading
 import docker
 import time
+from enum import Enum
+
+from hpotter.tables import Connections, TCP
 
 from hpotter.logger import logger
 from hpotter.plugins.OneWayThread import OneWayThread
 
+class RorR(Enum):
+    request = 1
+    response = 2
+    neither = 3
+
 class ContainerThread(threading.Thread):
-    def __init__(self, source, container_name):
+    def __init__(self, db, source, config):
         super().__init__()
+        self.db = db
         self.source = source
-        self.container_name = container_name
+        self.config = config
+        self.connection = None
         self.dest = self.thread1 = self.thread2 = self.container = None
 
     '''
@@ -46,10 +56,26 @@ class ContainerThread(threading.Thread):
                 logger.info(err)
                 raise err
 
+    def save_connection(self):
+        if 'add_dest' in self.config:
+            self.connection = Connections(
+                sourceIP=self.source.getsockname()[0],
+                sourcePort=self.source.getsockname()[1],
+                destIP=self.dest.getsockname()[0],
+                destPort=self.dest.getsockname()[1],
+                proto=TCP)
+            self.db.write(self.connection)
+        else:
+            self.connection = Connections(
+                sourceIP=self.source.getsockname()[0],
+                sourcePort=self.source.getsockname()[1],
+                proto=TCP)
+            self.db.write(self.connection)
+
     def run(self):
         try:
             client = docker.from_env()
-            self.container = client.containers.run(self.container_name, detach=True)
+            self.container = client.containers.run(self.config['container'], detach=True)
             logger.info('Started: %s', self.container)
             self.container.reload()
         except Exception as err:
@@ -63,13 +89,16 @@ class ContainerThread(threading.Thread):
             self.stop_and_remove()
             return
 
+        self.save_connection()
+
         # TODO: startup dynamic iptables rules code here.
 
         logger.debug('Starting thread1')
-        self.thread1 = OneWayThread(self.source, self.dest)
+        self.thread1 = OneWayThread(self.db, self.source, self.dest, \
+            {'request_length': 4096}, 'request', self.connection)
         self.thread1.start()
         logger.debug('Starting thread2')
-        self.thread2 = OneWayThread(self.dest, self.source)
+        self.thread2 = OneWayThread(self.db, self.dest, self.source, self.config, 'response', self.connection)
         self.thread2.start()
 
         logger.debug('Joining thread1')
@@ -77,10 +106,9 @@ class ContainerThread(threading.Thread):
         logger.debug('Joining thread2')
         self.thread2.join()
 
-        self.dest.close()
-
         # TODO: shutdown dynamic iptables rules code here.
 
+        self.dest.close()
         self.stop_and_remove()
 
     def stop_and_remove(self):

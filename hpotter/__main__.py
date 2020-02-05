@@ -5,8 +5,7 @@ import yaml
 
 from hpotter.logger import logger
 from hpotter.plugins.ListenThread import ListenThread
-
-from hpotter.db import open_db, close_db
+from hpotter.db import DB
 
 # https://stackoverflow.com/questions/18499497/how-to-process-sigterm-signal-gracefully
 class GracefulKiller:
@@ -19,30 +18,33 @@ class GracefulKiller:
         logger.info('In exit_gracefully')
         self.kill_now = True
 
-listen_threads = []
+class HP():
+    def __init__(self):
+        self.db = DB()
+        self.listen_threads = []
 
-def startup():
-    open_db()
-    global listen_threads
+    def startup(self):
+        self.db.open()
 
-    with open('plugins.yml') as f:
-        for config in yaml.safe_load_all(f):
-            lt = ListenThread(config)
-            listen_threads.append(lt)
-            lt.start()
+        with open('plugins.yml') as f:
+            for config in yaml.safe_load_all(f):
+                lt = ListenThread(self.db, config)
+                self.listen_threads.append(lt)
+                lt.start()
 
-def shutdown():
-    close_db()
-    logger.info('In shutdown')
-    for lt in listen_threads:
-        if lt.is_alive():
-            lt.shutdown()
+    def shutdown(self):
+        self.db.close()
+
+        for lt in self.listen_threads:
+            if lt.is_alive():
+                lt.shutdown()
 
 if "__main__" == __name__:
-    startup()
+    hp = HP()
+    hp.startup()
 
     killer = GracefulKiller()
     while not killer.kill_now:
         time.sleep(5)
 
-    shutdown()
+    hp.shutdown()
