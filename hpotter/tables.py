@@ -10,6 +10,7 @@ UDP = 17
 
 base = declarative_base()
 
+
 class Connections(base):
     # pylint: disable=E0213, R0903
     @declared_attr
@@ -24,6 +25,7 @@ class Connections(base):
     destPort = Column(Integer)
     proto = Column(Integer)
 
+
 class Credentials(base):
     # pylint: disable=E0213, R0903
     @declared_attr
@@ -35,6 +37,7 @@ class Credentials(base):
     password = Column(Text)
     connections_id = Column(Integer, ForeignKey('connections.id'))
     connection = relationship('Connections')
+
 
 class Data(base):
     # pylint: disable=E0213, R0903

@@ -25,6 +25,7 @@ Content-Type: text/html; charset=UTF-8
 </html>
 '''.format(now=datetime.now())
 
+
 class HTTPHandler(socketserver.BaseRequestHandler):
     def handle(self):
         connection = tables.Connections(
@@ -47,12 +48,15 @@ class HTTPHandler(socketserver.BaseRequestHandler):
 
         self.request.sendall(Header.encode('utf-8'))
 
-class HTTPServer(socketserver.ThreadingMixIn, socketserver.TCPServer): pass
+
+class HTTPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+    pass
+
 
 def start_server():
-    http_handler = HTTPHandler
     http500_server = HTTPServer(('0.0.0.0', 80), HTTPHandler)
     threading.Thread(target=http500_server.serve_forever).start()
+
 
 def stop_server():
     if http500_server:

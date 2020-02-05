@@ -1,8 +1,8 @@
-import socket
 import threading
 
 from hpotter.tables import Data
 from hpotter.logger import logger
+
 
 class OneWayThread(threading.Thread):
     def __init__(self, db, source, dest, config, kind, connection):
@@ -25,7 +25,8 @@ class OneWayThread(threading.Thread):
             logger.info(exception)
             return False
 
-        logger.debug('Reading from: ' + str(self.source) + ', read: ' + str(self.data))
+        logger.debug('Reading from: ' + str(self.source) +
+                     ', read: ' + str(self.data))
 
         if self.data == b'' or not self.data:
             logger.debug('No data read, stopping')
@@ -37,7 +38,8 @@ class OneWayThread(threading.Thread):
         return True
 
     def write(self):
-        logger.debug('Sending to: ' + str(self.dest) + ', sent: ' + str(self.data))
+        logger.debug('Sending to: ' + str(self.dest) +
+                     ', sent: ' + str(self.data))
         try:
             self.dest.sendall(self.data)
         except Exception as exception:
@@ -68,7 +70,8 @@ class OneWayThread(threading.Thread):
                 break
 
         if self.save and len(self.total) > 0:
-            self.db.write(Data(data=str(self.total), kind=self.kind, connection=self.connection))
-
-    def shutdown(self):
-        self.shutdown_requested = True
+            self.db.write(
+                Data(data=str(self.total),
+                     kind=self.kind,
+                     connection=self.connection)
+            )

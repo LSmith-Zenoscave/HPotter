@@ -9,10 +9,12 @@ from hpotter.tables import Connections, TCP
 from hpotter.logger import logger
 from hpotter.plugins.OneWayThread import OneWayThread
 
+
 class RorR(Enum):
     request = 1
     response = 2
     neither = 3
+
 
 class ContainerThread(threading.Thread):
     def __init__(self, db, source, config):
@@ -31,6 +33,7 @@ class ContainerThread(threading.Thread):
     https://support.apple.com/en-us/HT202944
     I believe client sockets start in the 40000's
     '''
+
     def connect_to_container(self):
         nwsettings = self.container.attrs['NetworkSettings']
         IPAddress = nwsettings['Networks']['bridge']['IPAddress']
@@ -38,21 +41,21 @@ class ContainerThread(threading.Thread):
 
         ports = nwsettings['Ports']
         assert len(ports) == 1
-
-        port = None
-        for p in ports.keys():
-            port = int(p.split('/')[0])
+        port_key = list(ports.keys())[0]
+        port = int(port_key.split('/')[0])
         logger.debug(port)
 
-        for x in range(9):
+        sock_addr = (IPAddress, port)
+        host = IPAddress + ':' + str(port)
+        for _ in range(9):
             try:
-                self.dest = socket.create_connection((IPAddress, port), timeout=2)
+                self.dest = socket.create_connection(sock_addr, timeout=2)
                 break
             except OSError as err:
                 if err.errno == 111:
                     time.sleep(2)
                     continue
-                logger.info('Unable to connect to ' + IPAddress + ':' + str(port))
+                logger.info('Unable to connect to ' + host)
                 logger.info(err)
                 raise err
 
@@ -75,7 +78,8 @@ class ContainerThread(threading.Thread):
     def run(self):
         try:
             client = docker.from_env()
-            self.container = client.containers.run(self.config['container'], detach=True)
+            self.container = client.containers.run(
+                self.config['container'], detach=True)
             logger.info('Started: %s', self.container)
             self.container.reload()
         except Exception as err:
@@ -94,11 +98,13 @@ class ContainerThread(threading.Thread):
         # TODO: startup dynamic iptables rules code here.
 
         logger.debug('Starting thread1')
-        self.thread1 = OneWayThread(self.db, self.source, self.dest, \
-            {'request_length': 4096}, 'request', self.connection)
+        self.thread1 = OneWayThread(self.db, self.source, self.dest,
+                                    {'request_length': 4096}, 'request',
+                                    self.connection)
         self.thread1.start()
         logger.debug('Starting thread2')
-        self.thread2 = OneWayThread(self.db, self.dest, self.source, self.config, 'response', self.connection)
+        self.thread2 = OneWayThread(self.db, self.dest, self.source,
+                                    self.config, 'response', self.connection)
         self.thread2.start()
 
         logger.debug('Joining thread1')
@@ -123,4 +129,3 @@ class ContainerThread(threading.Thread):
         self.thread2.shutdown()
         self.dest.close()
         self.stop_and_remove()
-

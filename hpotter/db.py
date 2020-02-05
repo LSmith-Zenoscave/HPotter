@@ -1,12 +1,12 @@
-import os
-import threading
-
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, scoped_session
+from hpotter.logger import logger
 from sqlalchemy_utils import database_exists, create_database
+from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy import create_engine
+import threading
+import os
 
 from hpotter.tables import base
-from hpotter.logger import logger
+
 
 class DB():
     def __init__(self):
@@ -15,12 +15,12 @@ class DB():
 
     def get_DB_string(self):
         # move to config.yml
-        DB=os.getenv('HPOTTER_DB', 'sqlite')
-        DB_USER=os.getenv('HPOTTER_DB_USER', 'root')
-        DB_PASSWORD=os.getenv('HPOTTER_DB_PASSWORD', '')
-        DB_HOST=os.getenv('HPOTTER_DB_HOST', '127.0.0.1')
-        DB_PORT=os.getenv('HPOTTER_DB_PORT', '')
-        DB_DB=os.getenv('HPOTTER_DB_DB', 'hpotter')
+        DB = os.getenv('HPOTTER_DB', 'sqlite')
+        DB_USER = os.getenv('HPOTTER_DB_USER', 'root')
+        DB_PASSWORD = os.getenv('HPOTTER_DB_PASSWORD', '')
+        DB_HOST = os.getenv('HPOTTER_DB_HOST', '127.0.0.1')
+        DB_PORT = os.getenv('HPOTTER_DB_PORT', '')
+        DB_DB = os.getenv('HPOTTER_DB_DB', 'hpotter')
 
         if DB != 'sqlite':
             if DB_PASSWORD:
@@ -32,8 +32,8 @@ class DB():
             if DB_DB:
                 DB_DB = '/' + DB_DB
 
-            return '{0}://{1}{2}@{3}{4}{5}'.format(DB, DB_USER, DB_PASSWORD, \
-                DB_HOST, DB_PORT, DB_DB)
+            return '{0}://{1}{2}@{3}{4}{5}'.format(DB, DB_USER, DB_PASSWORD,
+                                                   DB_HOST, DB_PORT, DB_DB)
         else:
             self.lock_needed = True
             return 'sqlite:///main.db'

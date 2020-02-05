@@ -1,5 +1,6 @@
 # command:
-# docker run --init -p 22:22 -p 23:23 -p 80:8080 -p 8000:8000 <image_name>
+# docker run --init -p 22:22 -p 23:23 -p 80:8080 -p 8000:8000 \
+#        -v /var/run/docker.sock:/var/run/docker.sock <image_name>
 
 FROM alpine
 EXPOSE 22 23 80 8000
@@ -20,7 +21,7 @@ WORKDIR /HPotter
 COPY requirements.txt setup.py ./
 RUN pip install -r requirements.txt
 COPY hpotter ./hpotter/
-COPY runit.sh README.md RSAKey.cfg ./
+COPY RSAKey.cfg ./
 RUN chmod +x ./runit.sh
 
-ENTRYPOINT [ "ash", "./runit.sh" ]
+ENTRYPOINT [ "ash", "-c", "python3 -m hpotter.jsonserver &>/dev/null & python3 -m hpotter" ]

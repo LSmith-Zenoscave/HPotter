@@ -1,6 +1,5 @@
 SQLAlchemy
 SQLAlchemy-Utils
-cffi
 paramiko
 docker
 pyOpenSSL

@@ -6,11 +6,11 @@ import paramiko
 from paramiko.py3compat import u, decodebytes
 import _thread
 
-import hpotter.env
 from hpotter import tables
 from hpotter.logger import logger
 from hpotter.env import write_db, ssh_server
 from hpotter.docker_shell.shell import fake_shell
+
 
 class SSHServer(paramiko.ServerInterface):
     undertest = False
@@ -33,8 +33,8 @@ class SSHServer(paramiko.ServerInterface):
     def check_auth_password(self, username, password):
         # changed so that any username/password can be used
         if username and password:
-            login = tables.Credentials(username=username, password=password, \
-                connection=self.connection)
+            login = tables.Credentials(username=username, password=password,
+                                       connection=self.connection)
             write_db(login)
 
             return paramiko.AUTH_SUCCESSFUL
@@ -48,14 +48,16 @@ class SSHServer(paramiko.ServerInterface):
             return paramiko.AUTH_SUCCESSFUL
         return paramiko.AUTH_FAILED
 
-    def check_auth_gssapi_with_mic(self, username, \
-        gss_authenticated=paramiko.AUTH_FAILED, cc_file=None):
+    def check_auth_gssapi_with_mic(self, username,
+                                   gss_authenticated=paramiko.AUTH_FAILED,
+                                   cc_file=None):
         if gss_authenticated == paramiko.AUTH_SUCCESSFUL:
             return paramiko.AUTH_SUCCESSFUL
         return paramiko.AUTH_FAILED
 
-    def check_auth_gssapi_keyex(self, username, \
-        gss_authenticated=paramiko.AUTH_FAILED, cc_file=None):
+    def check_auth_gssapi_keyex(self, username,
+                                gss_authenticated=paramiko.AUTH_FAILED,
+                                cc_file=None):
         if gss_authenticated == paramiko.AUTH_SUCCESSFUL:
             return paramiko.AUTH_SUCCESSFUL
         return paramiko.AUTH_FAILED
@@ -72,9 +74,10 @@ class SSHServer(paramiko.ServerInterface):
         return True
 
     # pylint: disable=R0913
-    def check_channel_pty_request(self, channel, term, width, height, \
-        pixelwidth, pixelheight, modes):
+    def check_channel_pty_request(self, channel, term, width, height,
+                                  pixelwidth, pixelheight, modes):
         return True
+
 
 class SshThread(threading.Thread):
     def __init__(self):
@@ -107,7 +110,6 @@ class SshThread(threading.Thread):
             host_key = paramiko.RSAKey(filename="RSAKey.cfg")
             transport.add_server_key(host_key)
 
-
             server = SSHServer(connection)
             transport.start_server(server=server)
 
@@ -118,7 +120,6 @@ class SshThread(threading.Thread):
             fake_shell(self.chan, connection, '# ')
             self.chan.close()
 
-
     def stop(self):
         self.ssh_socket.close()
         if self.chan:
@@ -128,10 +129,12 @@ class SshThread(threading.Thread):
         except SystemExit:
             pass
 
+
 def start_server():
     global ssh_server
     ssh_server = SshThread()
     threading.Thread(target=ssh_server.run).start()
+
 
 def stop_server():
     if ssh_server:

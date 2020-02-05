@@ -4,10 +4,12 @@ import threading
 from hpotter import tables
 from hpotter.tables import CREDS_LENGTH
 from hpotter import logger
-from hpotter.env import logger, write_db, telnet_server
+from hpotter.env import write_db, telnet_server
 from hpotter.docker_shell.shell import fake_shell, get_string
 
 # https://docs.python.org/3/library/socketserver.html
+
+
 class TelnetHandler(socketserver.BaseRequestHandler):
 
     def creds(self, prompt):
@@ -18,7 +20,8 @@ class TelnetHandler(socketserver.BaseRequestHandler):
             self.request.sendall(prompt)
 
             logger.debug('Before creds get_string')
-            response = get_string(self.request, limit=CREDS_LENGTH, telnet=True)
+            response = get_string(
+                self.request, limit=CREDS_LENGTH, telnet=True)
 
             tries += 1
             if tries > 2:
@@ -48,11 +51,12 @@ class TelnetHandler(socketserver.BaseRequestHandler):
             return
         logger.debug('After creds')
 
-        creds = tables.Credentials(username=username, password=password, \
-            connection=connection)
+        creds = tables.Credentials(username=username, password=password,
+                                   connection=connection)
         write_db(creds)
 
-        self.request.sendall(b'Last login: Mon Nov 20 12:41:05 2017 from 8.8.8.8\n')
+        self.request.sendall(
+            b'Last login: Mon Nov 20 12:41:05 2017 from 8.8.8.8\n')
 
         prompt = b'\n$: ' if username in ('root', 'admin') else b'\n#: '
         try:
@@ -65,13 +69,17 @@ class TelnetHandler(socketserver.BaseRequestHandler):
         self.request.close()
         logger.debug('telnet handle finished')
 
-class TelnetServer(socketserver.ThreadingMixIn, socketserver.TCPServer): pass
+
+class TelnetServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+    pass
+
 
 def start_server():
     global telnet_server
     telnet_handler = TelnetHandler
     telnet_server = TelnetServer(('0.0.0.0', 23), telnet_handler)
     threading.Thread(target=telnet_server.serve_forever).start()
+
 
 def stop_server():
     if telnet_server:

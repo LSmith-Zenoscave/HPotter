@@ -1,4 +1,4 @@
-OneWayThreadimport socket
+import socket
 import threading
 
 from hpotter import tables
@@ -6,6 +6,8 @@ from hpotter.env import logger, write_db
 
 # read and write between two sockets with a possible upper limit. write to
 # db if table passed in.
+
+
 class OneWayThread(threading.Thread):
     def __init__(self, source, dest, table=None, limit=0):
         super().__init__()

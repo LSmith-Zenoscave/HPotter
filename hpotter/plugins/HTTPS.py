@@ -1,4 +1,5 @@
-import socket, ssl
+import socket
+import ssl
 from datetime import datetime
 
 Header = '''
@@ -19,6 +20,7 @@ Content-Type: text/html; charset=UTF-8
 </html>
 '''.format(now=datetime.now())
 
+
 def start_server():
     bindsocket = socket.socket()
     bindsocket.bind(('127.0.0.1', 4443))
@@ -36,6 +38,7 @@ def start_server():
         finally:
             connstream.shutdown(socket.SHUT_RDWR)
             connstream.close()
+
 
 def stop_server():
     pass

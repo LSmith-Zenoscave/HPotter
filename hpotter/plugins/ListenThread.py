@@ -5,11 +5,11 @@ import tempfile
 import os
 
 from OpenSSL import crypto
-from time import gmtime, mktime
 
 from hpotter.logger import logger
 from hpotter import tables
 from hpotter.plugins.ContainerThread import ContainerThread
+
 
 class ListenThread(threading.Thread):
     def __init__(self, db, config, table=None, limit=None):
@@ -27,7 +27,8 @@ class ListenThread(threading.Thread):
     def gen_cert(self):
         if 'key_file' in self.config:
             self.context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-            self.context.load_cert_chain(self.config['cert_file'], self.config['key_file'])
+            self.context.load_cert_chain(
+                self.config['cert_file'], self.config['key_file'])
         else:
             key = crypto.PKey()
             key.generate_key(crypto.TYPE_RSA, 4096)
@@ -56,7 +57,8 @@ class ListenThread(threading.Thread):
             key_file.close()
 
             self.context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-            self.context.load_cert_chain(certfile=cert_file.name, keyfile=key_file.name)
+            self.context.load_cert_chain(
+                certfile=cert_file.name, keyfile=key_file.name)
 
             os.remove(cert_file.name)
             os.remove(key_file.name)
@@ -65,7 +67,8 @@ class ListenThread(threading.Thread):
         if self.TLS:
             self.gen_cert()
 
-        listen_address = (self.config['listen_IP'], int(self.config['listen_port']))
+        listen_address = (self.config['listen_IP'],
+                          int(self.config['listen_port']))
         logger.info('Listening to ' + str(listen_address))
         listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -78,8 +81,6 @@ class ListenThread(threading.Thread):
             source = None
             try:
                 source, address = listen_socket.accept()
-                if self.TLS:
-                    source = self.context.wrap_socket(source, server_side=True)
             except socket.timeout:
                 if self.shutdown_requested:
                     logger.info('ListenThread shutting down')

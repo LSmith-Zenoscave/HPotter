@@ -4,6 +4,7 @@ from hpotter.env import logger, start_shell, get_shell_container, write_db
 from hpotter import tables
 from hpotter.tables import SHELL_COMMAND_LENGTH
 
+
 def get_string(client_socket, limit=SHELL_COMMAND_LENGTH, telnet=False):
     character = client_socket.recv(1)
     if not telnet:
@@ -35,7 +36,6 @@ def get_string(client_socket, limit=SHELL_COMMAND_LENGTH, telnet=False):
         if not telnet:
             client_socket.send(character)
 
-
     if not telnet:
         client_socket.send(b'\n')
 
@@ -45,6 +45,7 @@ def get_string(client_socket, limit=SHELL_COMMAND_LENGTH, telnet=False):
 
     logger.debug('get_string returning %s', string.strip())
     return string.strip()
+
 
 def deal_with_dots(path, workdir):
     while path.startswith('.'):
@@ -70,6 +71,7 @@ def deal_with_dots(path, workdir):
     else:
         return workdir + '/' + path
 
+
 def change_directory(command, workdir):
     directory = command.split(' ')
 
@@ -89,6 +91,7 @@ def change_directory(command, workdir):
         return workdir + directory
 
     return workdir + '/' + directory
+
 
 def fake_shell(client_socket, connection, prompt, telnet=False):
     start_shell()
@@ -120,8 +123,8 @@ def fake_shell(client_socket, connection, prompt, telnet=False):
         cmd = tables.ShellCommands(command=command, connection=connection)
         write_db(cmd)
 
-        exit_code, output = get_shell_container().exec_run(command, \
-            workdir=workdir)
+        exit_code, output = get_shell_container().exec_run(command,
+                                                           workdir=workdir)
 
         logger.debug('Shell exit_code %s', str(exit_code))
         logger.debug('Shell output %s', str(output))
@@ -129,7 +132,7 @@ def fake_shell(client_socket, connection, prompt, telnet=False):
         output = output.replace(b'\n', b'\r\n')
 
         if exit_code in (126, 127):
-            client_socket.sendall(command.encode('utf-8') + \
-                b': command not found\r\n')
+            client_socket.sendall(command.encode('utf-8') +
+                                  b': command not found\r\n')
         else:
             client_socket.sendall(output)
