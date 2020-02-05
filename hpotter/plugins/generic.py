@@ -2,7 +2,7 @@ import socket
 import threading
 
 from hpotter import tables
-from hpotter.env import logger, write_db
+from hpotter import db, logger
 
 # read and write between two sockets with a possible upper limit. write to
 # db if table passed in.
@@ -15,6 +15,7 @@ class OneWayThread(threading.Thread):
         self.dest = dest
         self.table = table
         self.limit = limit
+        self.db = db.DB()
 
         if self.table:
             self.connection = tables.Connections(
@@ -23,9 +24,11 @@ class OneWayThread(threading.Thread):
                 destIP=self.dest.getsockname()[0],
                 destPort=self.dest.getsockname()[1],
                 proto=tables.TCP)
-            write_db(self.connection)
+            self.db.open()
+            self.db.write(self.connection)
+            self.db.close()
 
-    def exceptions(function):
+    def exceptions(self, function):
         try:
             return function()
         except socket.timeout as timeout:
@@ -42,7 +45,7 @@ class OneWayThread(threading.Thread):
         total = b''
         while 1:
             try:
-                data = exceptions(lambda: self.source.recv(4096))
+                data = self.exceptions(lambda: self.source.recv(4096))
             except Exception:
                 break
 
@@ -53,7 +56,7 @@ class OneWayThread(threading.Thread):
                 total += data
 
             try:
-                exceptions(lambda: self.dest.sendall(data))
+                self.exceptions(lambda: self.dest.sendall(data))
             except Exception:
                 break
 
@@ -62,4 +65,6 @@ class OneWayThread(threading.Thread):
 
         if self.table:
             http = self.table(request=str(total), connection=self.connection)
-            write_db(http)
+            self.db.open()
+            self.db.write(http)
+            self.db.close()

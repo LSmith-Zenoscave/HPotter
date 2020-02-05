@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import MagicMock, call
+from unittest.mock import call
 from hpotter.plugins.generic import OneWayThread
 
 
