@@ -2,6 +2,8 @@
 # HPotter
 A simple to install and run Honey Pot.
 
+(README may be out of date. Update TDB)
+
 [![Build Status](https://travis-ci.org/drsjb80/HPotter.svg?branch=master)](https://travis-ci.org/drsjb80/HPotter)
 
 ## Running and developing
