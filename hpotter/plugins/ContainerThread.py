@@ -40,7 +40,6 @@ class ContainerThread(threading.Thread):
         logger.debug(IPAddress)
 
         ports = nwsettings['Ports']
-        assert len(ports) == 1
         port_key = list(ports.keys())[0]
         port = int(port_key.split('/')[0])
         logger.debug(port)
@@ -53,6 +52,7 @@ class ContainerThread(threading.Thread):
                 break
             except OSError as err:
                 if err.errno == 111:
+                    logger.info(err)
                     time.sleep(2)
                     continue
                 logger.info('Unable to connect to ' + host)
@@ -79,7 +79,9 @@ class ContainerThread(threading.Thread):
         try:
             client = docker.from_env()
             self.container = client.containers.run(
-                self.config['container'], detach=True)
+                self.config['container'],
+                detach=True,
+                environment=self.config.get('environment', []))
             logger.info('Started: %s', self.container)
             self.container.reload()
         except Exception as err:
@@ -89,7 +91,7 @@ class ContainerThread(threading.Thread):
         try:
             self.connect_to_container()
         except Exception as err:
-            logger.info(err)
+            logger.info(repr(err))
             self.stop_and_remove()
             return
 

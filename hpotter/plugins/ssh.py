@@ -6,9 +6,7 @@ import paramiko
 from paramiko.py3compat import u, decodebytes
 import _thread
 
-from hpotter import tables
-from hpotter.logger import logger
-from hpotter.env import write_db, ssh_server
+from hpotter import tables, logger
 from hpotter.docker_shell.shell import fake_shell
 
 

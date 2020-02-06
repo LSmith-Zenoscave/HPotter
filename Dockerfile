@@ -1,20 +1,17 @@
 # command:
 # docker run --init -p 22:22 -p 23:23 -p 80:8080 -p 8000:8000 \
-#        -v /var/run/docker.sock:/var/run/docker.sock <image_name>
+#        -v /var/run/docker.sock:/var/run/docker.sock \
+#        -v `pwd`/plugins.yml:/HPotter/plugins.yml <image_name>
 
 FROM alpine
-EXPOSE 22 23 80 8000
 
-RUN apk update
-RUN apk add python3 
+RUN apk add --update --no-cache \
+    python3 \
+    build-base \
+    python3-dev \
+    libffi-dev \
+    openssl-dev
 RUN pip3 install --upgrade pip
-RUN apk add git
-RUN apk add build-base
-RUN apk add python3-dev
-RUN apk add libffi-dev
-RUN apk add postgresql-dev
-RUN apk add openssl-dev
-RUN apk add mariadb-dev
 
 WORKDIR /HPotter
 
@@ -22,6 +19,5 @@ COPY requirements.txt setup.py ./
 RUN pip install -r requirements.txt
 COPY hpotter ./hpotter/
 COPY RSAKey.cfg ./
-RUN chmod +x ./runit.sh
 
-ENTRYPOINT [ "ash", "-c", "python3 -m hpotter.jsonserver &>/dev/null & python3 -m hpotter" ]
+ENTRYPOINT python3 -m hpotter
