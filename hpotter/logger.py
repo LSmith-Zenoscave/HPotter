@@ -1,5 +1,7 @@
+"""Global logger configured by hpotter/logging.conf
+"""
 import logging
 import logging.config
 
 logging.config.fileConfig('hpotter/logging.conf')
-logger = logging.getLogger('hpotter')
+LOGGER = logging.getLogger('hpotter')

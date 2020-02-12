@@ -1,13 +1,21 @@
 ---
 name: 'apache'
 container: 'httpd:latest'
-listen_IP: '127.0.0.1'
+listen_IP: '0.0.0.0'
 listen_port: 8080
 request_length: 4096
 ---
 name: 'apache ssl'
 container: 'httpd:latest'
-listen_IP: '127.0.0.1'
+listen_IP: '0.0.0.0'
 listen_port: 8081
 request_length: 4096
 TLS: true
+---
+name: 'mariadb'
+container: 'mariadb:latest'
+listen_IP: '0.0.0.0'
+listen_port: 3306
+request_length: 4096
+environment:
+  - MYSQL_ALLOW_EMPTY_PASSWORD=yes
