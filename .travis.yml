@@ -4,15 +4,24 @@ sudo: false
 # Set the build language to Python
 language: python
 
+# Ensure pip is up to date
+before_install:
+  - pip install -U pip
+
 # Install the codecov pip dependency
 install:
-  - pip install codecov
-  - pip install coverage
+  - pip install codecov coverage flake8 pylint radon
   - pip install -r requirements.txt
 
-# Run the unit test
+# Run the linting, tests, and coverage
+# pylint should not fail on TODO's or Fixme's for now.
 script:
-  - coverage run --source hpotter -m unittest discover
+  - pylint --disable=fixme hpotter 
+  - flake8 hpotter
+  - coverage erase
+  - coverage run --branch --source=hpotter -m unittest discover
+  - coverage report -m
+  - "radon cc -a hpotter | grep 'Average complexity: A'"
 
 # Push the results back to codecov
 after_success:

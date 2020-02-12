@@ -1,17 +1,22 @@
+"""Hpotter request/response logging schema ORM
+"""
+from enum import Enum
+
 from sqlalchemy import Column, Text, Integer, ForeignKey, DateTime, func
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declared_attr, declarative_base
 from sqlalchemy_utils import IPAddressType
-from enum import Enum
 
 # https://www.ietf.org/rfc/rfc1700.txt
 TCP = 6
 UDP = 17
 
-base = declarative_base()
+BASE = declarative_base()
 
 
-class Connections(base):
+class Connections(BASE):
+    """Describes a connection to a logged socket.
+    """
     # pylint: disable=E0213, R0903
     @declared_attr
     def __tablename__(cls):
@@ -26,7 +31,9 @@ class Connections(base):
     proto = Column(Integer)
 
 
-class Credentials(base):
+class Credentials(BASE):
+    """Describes connection credentials used to gain access.
+    """
     # pylint: disable=E0213, R0903
     @declared_attr
     def __tablename__(cls):
@@ -39,7 +46,9 @@ class Credentials(base):
     connection = relationship('Connections')
 
 
-class Data(base):
+class Data(BASE):
+    """Describes socket traffic data during the session.
+    """
     # pylint: disable=E0213, R0903
     @declared_attr
     def __tablename__(cls):

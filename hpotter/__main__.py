@@ -1,15 +1,20 @@
+"""HPotter HoneyPot runner.
+"""
+
 import signal
 import time
 import yaml
 
-from hpotter.logger import logger
-from hpotter.plugins.ListenThread import ListenThread
+from hpotter.logger import LOGGER
+from hpotter.plugins.listen_thread import ListenThread
 from hpotter.db import DB
 
+
 # https://stackoverflow.com/questions/18499497/how-to-process-sigterm-signal-gracefully
-
-
+# pylint: disable=too-few-public-methods
 class GracefulKiller:
+    """Signal Handler for graceful exiting.
+    """
     kill_now = False
 
     def __init__(self):
@@ -17,38 +22,54 @@ class GracefulKiller:
         signal.signal(signal.SIGTERM, self.exit_gracefully)
 
     def exit_gracefully(self, signum, frame):
-        logger.info('In exit_gracefully')
+        """Set the exit flag when signaled.
+        """
+        del signum
+        del frame
+        LOGGER.info('In exit_gracefully')
         self.kill_now = True
 
 
 class HP():
+    """HoneyPot executor class.
+    """
     def __init__(self):
-        self.db = DB()
+        self.db_conn = DB()
         self.listen_threads = []
 
     def startup(self):
-        self.db.open()
+        """Satrt the Honey Pot server listen threads.
+        """
+        self.db_conn.open()
 
-        with open('plugins.yml') as f:
-            for config in yaml.safe_load_all(f):
-                lt = ListenThread(self.db, config)
-                self.listen_threads.append(lt)
-                lt.start()
+        with open('plugins.yml') as conf_file:
+            for config in yaml.safe_load_all(conf_file):
+                thread = ListenThread(self.db_conn, config)
+                self.listen_threads.append(thread)
+                thread.start()
 
     def shutdown(self):
-        self.db.close()
+        """Shutdown and close all server threads.
+        """
+        self.db_conn.close()
 
-        for lt in self.listen_threads:
-            if lt.is_alive():
-                lt.shutdown()
+        for thread in self.listen_threads:
+            if thread.is_alive():
+                thread.shutdown()
 
 
-if "__main__" == __name__:
-    hp = HP()
-    hp.startup()
+def main():
+    """Main execution method.
+    """
+    hpotter = HP()
+    hpotter.startup()
 
     killer = GracefulKiller()
     while not killer.kill_now:
         time.sleep(5)
 
-    hp.shutdown()
+    hpotter.shutdown()
+
+
+if __name__ == "__main__":
+    main()
